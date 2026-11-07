@@ -11,3 +11,4 @@ dist/
 
 # система
 .DS_Store
+.claude/
