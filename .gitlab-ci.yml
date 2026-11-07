@@ -1,0 +1,26 @@
+stages:
+  - test
+
+# Тесты безопасности базы: на каждый push/MR поднимаем Postgres,
+# применяем заглушку Supabase + миграции по порядку и гоняем атаки.
+# Если хоть одна атака прошла (а должна была упасть) — job падает, пайплайн красный.
+db-tests:
+  stage: test
+  image: postgres:16
+  services:
+    - name: postgres:16
+  variables:
+    POSTGRES_DB: app_test
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgres
+    POSTGRES_HOST_AUTH_METHOD: trust
+    PGHOST: postgres
+    PGUSER: postgres
+    PGDATABASE: app_test
+  script:
+    - echo "== заглушка окружения Supabase =="
+    - psql -v ON_ERROR_STOP=1 -f supabase/tests/00_supabase_stub.sql
+    - echo "== миграции по порядку =="
+    - for f in supabase/migrations/*.sql; do echo "-- $f"; psql -v ON_ERROR_STOP=1 -f "$f"; done
+    - echo "== тесты-атаки =="
+    - psql -v ON_ERROR_STOP=1 -f supabase/tests/attacks.sql
