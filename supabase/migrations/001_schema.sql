@@ -12,7 +12,7 @@ create type public.urgency_level as enum('normal', 'urgent');
 
 create table
   public.profiles (
-    id uuid primary key references auth.users (id),
+    id uuid primary key references auth.users (id) on delete cascade,
     email text not null,
     full_name text default '',
     role public.app_role not null default 'master',
@@ -63,3 +63,7 @@ $$;
 create trigger on_auth_user_created
 after insert on auth.users for each row
 execute function public.handle_new_user ();
+
+create index requests_master_id_idx on public.requests (master_id);
+
+create index request_history_request_id_idx on public.request_history (request_id);
