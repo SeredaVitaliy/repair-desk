@@ -1,0 +1,23 @@
+# Локальное окружение для разработки.
+# Поднимает PostgreSQL в контейнере одной командой: docker compose up -d
+services:
+  db:
+    image: postgres:16            # готовый образ PostgreSQL 16 (скачается автоматически)
+    container_name: repair-db     # имя контейнера — чтобы удобно обращаться к нему
+    restart: unless-stopped       # поднимать заново после падения/перезагрузки, пока сам не остановишь
+    environment:                  # переменные, которые образ читает при ПЕРВОМ запуске
+      POSTGRES_USER: repair       # имя пользователя базы
+      POSTGRES_PASSWORD: repair   # пароль (локальная разработка — не секрет)
+      POSTGRES_DB: repair         # имя базы, которая создастся сразу
+    ports:
+      - "5432:5432"               # хост:контейнер — пробрасываем порт наружу, на localhost:5432
+    volumes:
+      - repair-pgdata:/var/lib/postgresql/data  # данные базы — в именованном томе, а не внутри контейнера
+    healthcheck:                  # как Docker понимает, что база реально готова принимать запросы
+      test: ["CMD-SHELL", "pg_isready -U repair -d repair"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  repair-pgdata:                  # объявляем именованный том (переживает пересоздание контейнера)
