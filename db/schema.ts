@@ -1,4 +1,11 @@
-import { pgTable, uuid, text, timestamp, pgEnum } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  uuid,
+  text,
+  timestamp,
+  pgEnum,
+  bigint,
+} from "drizzle-orm/pg-core";
 
 export const requestStatus = pgEnum("request_status", [
   "new",
@@ -32,6 +39,24 @@ export const requests = pgTable("requests", {
   authorId: uuid("author_id")
     .notNull()
     .references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const requestHistory = pgTable("request_history", {
+  id: bigint("id", { mode: "number" })
+    .primaryKey()
+    .generatedAlwaysAsIdentity(),
+  requestId: uuid("request_id")
+    .notNull()
+    .references(() => requests.id, { onDelete: "cascade" }),
+  fromStatus: requestStatus("from_status"),
+  toStatus: requestStatus("to_status").notNull(),
+  changedBy: uuid("changed_by")
+    .notNull()
+    .references(() => users.id),
+  comment: text("comment"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
